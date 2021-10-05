@@ -1,8 +1,10 @@
 package com.curtisnewbie;
 
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -16,17 +18,24 @@ public class FeignDemo {
     private static final Logger logger = LoggerFactory.getLogger(FeignDemo.class);
 
     @Autowired
-    private EchoServerFeign feign;
+    private EchoServerFeign echoServerFeign;
+
+    @Autowired
+    private SlowOperationFeign slowOperationFeign;
+
+    @Autowired
+    private ThrottleOpFeign throttleOpFeign;
 
     @PostConstruct
     private void init() {
         new Thread(() -> {
             for (; ; ) {
                 try {
-                    logger.info("Called EchoServer, response: {}", feign.getEchoMsg());
-                    logger.info("Get echo count from EchoServer, response: {}", feign.getEchoCount());
-                    logger.info("Get dummy from EchoServer, response: {}", feign.getDummy());
-                    Thread.sleep(1000);
+                    logger.info("Called EchoServer, response: {}", echoServerFeign.getEchoMsg());
+                    logger.info("Get echo count from EchoServer, response: {}", echoServerFeign.getEchoCount());
+                    logger.info("Get dummy from EchoServer, response: {}", echoServerFeign.getDummy());
+                    logger.info("Slow operation, response: {}", slowOperationFeign.slowOperation());
+                    Thread.sleep(500);
                 } catch (Exception e) {
                     if (e instanceof InterruptedException)
                         Thread.currentThread().interrupt();
@@ -35,6 +44,21 @@ public class FeignDemo {
             }
 
         }).start();
+
+        for(int i = 0; i < 2 ; i ++) {
+            new Thread(() -> {
+                for (; ; ) {
+                    try {
+                        logger.info("ThrottleOpFeign, resp: {}", throttleOpFeign.getResp());
+                        Thread.sleep(100);
+                    } catch (Exception e) {
+                        if (e instanceof InterruptedException)
+                            Thread.currentThread().interrupt();
+                        logger.error("Error", e);
+                    }
+                }
+            }).start();
+        }
     }
 
 }

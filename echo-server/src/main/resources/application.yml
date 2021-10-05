@@ -1,0 +1,6 @@
+resilience4j.ratelimiter:
+  instances:
+    throttledOp:
+      limitForPeriod: 5
+      limitRefreshPeriod: 1s
+      timeoutDuration: 0
