@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  *
  * @author yongjie.zhuang
  */
-@FeignClient(name = "echoServerFeign", url = "http://localhost:8080", fallback = FallbackEchoServerFeign.class)
+@FeignClient(name = "echoserver", fallback = FallbackEchoServerFeign.class)
 public interface EchoServerFeign {
 
     @GetMapping(value = "/echo/msg")

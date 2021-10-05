@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author yongjie.zhuang
@@ -26,10 +28,20 @@ public class FeignDemo {
     @Autowired
     private ThrottleOpFeign throttleOpFeign;
 
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
+
+    @PreDestroy
+    private void preDestroy() {
+        isShutdown.set(true);
+    }
+
     @PostConstruct
     private void init() {
         new Thread(() -> {
             for (; ; ) {
+                if (isShutdown.get())
+                    return;
+
                 try {
                     logger.info("Called EchoServer, response: {}", echoServerFeign.getEchoMsg());
                     logger.info("Get echo count from EchoServer, response: {}", echoServerFeign.getEchoCount());
@@ -45,9 +57,12 @@ public class FeignDemo {
 
         }).start();
 
-        for(int i = 0; i < 2 ; i ++) {
+        for (int i = 0; i < 2; i++) {
             new Thread(() -> {
                 for (; ; ) {
+                    if (isShutdown.get())
+                        return;
+
                     try {
                         logger.info("ThrottleOpFeign, resp: {}", throttleOpFeign.getResp());
                         Thread.sleep(100);
